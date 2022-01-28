@@ -1,0 +1,15 @@
+abi_dir: ./abis
+networks:
+  avalanche:
+    chain_id: 43114
+    endpoint: ${AVAX_RPC_URL}
+    farms:
+      name: alpha-homora-v2
+      pair: USDC.e/AVAX
+      tokens: 
+        token0: '0xa7d7079b0fead91f3e65f86e8915cb59c1a4c664'
+        token1: '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7'
+      spell_address: '0xdbc2aa11aa01baa22892de745c661db9f204b2cd'
+dotenv: .env
+wallets:
+  private_key: ${PRIVATE_KEY}
