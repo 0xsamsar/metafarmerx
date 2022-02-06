@@ -8,10 +8,10 @@ from ..scripts.traderjoe_spell import add_liquidity, remove_liquidity
 def test_open_position():
     pos_id = 0
     call_data = [
-                    10 * 10**6,     # supply USDC.e
+                    50 * 10**6,     # supply USDC.e
                     0,              # supply AVAX
                     0,              # supply LP
-                    20 * 10**6,     # borrow USDC.e
+                    100 * 10**6,    # borrow USDC.e
                     0,              # borrow AVAX
                     0,              # borrow LP tokens
                     0,              # min USDC

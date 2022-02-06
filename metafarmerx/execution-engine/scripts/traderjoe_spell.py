@@ -7,7 +7,7 @@ from .utils import load_abi, get_account
 def add_liquidity(pos_id, call_data):
     account = get_account()
     bank = Contract.from_abi("HomoraBank", config["alpha-homora"]["HomoraBank"], load_abi(config["alpha-homora"]["HomoraBankABI"]))
-    spell = Contract.from_abi("TraderJoeSpellV1", config["alpha-homora"]["pools"]["USDC.e/AVAX"]["spell"], load_abi(config["alpha-homora"]["pools"]["USDC.e/AVAX"]["spell_abi"]))
+    spell = Contract.from_abi("TraderJoeSpellV1", config["alpha-homora"]["pools"]["USDC.e/AVAX"]["spell"], load_abi(config["alpha-homora"]["pools"]["USDC.e/AVAX"]["spellAbi"]))
     tx = bank.execute(
         pos_id,
         spell,
@@ -18,13 +18,13 @@ def add_liquidity(pos_id, call_data):
         ),
         {'from': account}
     )
-    return pos_id
+    return tx
 
 
 def remove_liquidity(pos_id, call_data):
     account = get_account()
     bank = Contract.from_abi("HomoraBank", config["alpha-homora"]["HomoraBank"], load_abi(config["alpha-homora"]["HomoraBankABI"]))
-    spell = Contract.from_abi("TraderJoeSpellV1", config["alpha-homora"]["pools"]["USDC.e/AVAX"]["spell"], load_abi(config["alpha-homora"]["pools"]["USDC.e/AVAX"]["spell_abi"]))
+    spell = Contract.from_abi("TraderJoeSpellV1", config["alpha-homora"]["pools"]["USDC.e/AVAX"]["spell"], load_abi(config["alpha-homora"]["pools"]["USDC.e/AVAX"]["spellAbi"]))
     tx = bank.execute(
         pos_id,
         spell,
@@ -35,8 +35,18 @@ def remove_liquidity(pos_id, call_data):
         ),
         {'from': account}
     )
-    return pos_id
+    return tx
 
-#TODO
-def harvest():
-    pass
+
+def harvest_rewards(pos_id):
+    account = get_account()
+    bank = Contract.from_abi("HomoraBank", config["alpha-homora"]["HomoraBank"], load_abi(config["alpha-homora"]["HomoraBankABI"]))
+    spell = Contract.from_abi("TraderJoeSpellV1", config["alpha-homora"]["pools"]["USDC.e/AVAX"]["spell"], load_abi(config["alpha-homora"]["pools"]["USDC.e/AVAX"]["spellAbi"]))
+    wstaking = config["alpha-homora"]["pools"]["USDC.e/AVAX"]["staking"]
+    tx = bank.execute(
+        pos_id,
+        spell,
+        spell.harvestWStakingRewards.encode_input(wstaking),
+        {'from': account}
+    )
+    return tx
