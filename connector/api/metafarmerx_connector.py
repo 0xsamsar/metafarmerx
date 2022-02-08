@@ -24,10 +24,10 @@ class MetaFarmerXConnector():
         _PUSH_PORT=32768,          # Port for Sending commands
         _PULL_PORT=32769,          # Port for Receiving responses
         _SUB_PORT=32770,           # Port for Subscribing for prices
-        _delimiter=';',
+        _delimiter=';',            # String delimiter
         _pulldata_handlers = [],   # Handlers to process data received through PULL port.
         _subdata_handlers = [],    # Handlers to process data received through SUB port.
-        _verbose=True,             # String delimiter
+        _verbose=True,             
         _poll_timeout=1000,        # ZMQ Poller Timeout (ms)
         _sleep_delay=0.001,        # 1 ms for time.sleep()
         _monitor=False):           # Experimental ZeroMQ Socket Monitoring
@@ -104,16 +104,11 @@ class MetaFarmerXConnector():
         # Market Data Dictionary by Symbol (holds price data)
         self._Market_Data_DB = {}   # {SYMBOL: {TIMESTAMP: PRICE}}
         
-        # History Data Dictionary by Symbol (holds historic data of the last HIST request for each symbol)
-        self._History_DB = {}   # {SYMBOL_TF: [{'time': TIME, 'open': OPEN_PRICE, 'high': HIGH_PRICE, 
-                                #               'low': LOW_PRICE, 'close': CLOSE_PRICE, 'tick_volume': TICK_VOLUME, 
-                                #               'spread': SPREAD, 'real_volume': REAL_VOLUME}, ...]}
+        # Position Data Dictionary by Position ID
+        self._History_DB = {} 
                                 
         # Temporary Order STRUCT for convenience wrappers later.
         self.temp_order_dict = self._generate_default_order_dict()
-        
-        # Thread returns the most recently received DATA block here
-        self._thread_data_output = None
         
         # Verbosity
         self._verbose = _verbose
@@ -170,7 +165,6 @@ class MetaFarmerXConnector():
             self._PULL_Monitor_Thread.start()
        
     ##########################################################################
-    
     def _MFX_SHUTDOWN_(self):
         
         # Set INACTIVE
@@ -196,7 +190,6 @@ class MetaFarmerXConnector():
         print("\n++ [KERNEL] ZeroMQ Context Terminated.. shut down safely complete! :)")
         
     ##########################################################################
-    
     """
     Set Status (to enable/disable strategy manually)
     """
@@ -206,7 +199,6 @@ class MetaFarmerXConnector():
         print("\n**\n[KERNEL] Setting Status to {} - Deactivating Threads.. please wait a bit.\n**".format(_new_status))
                 
     ##########################################################################
-    
     """
     Function to send commands to MetaFarmerX (PUSH)
     """
@@ -222,33 +214,20 @@ class MetaFarmerXConnector():
             print('\n[KERNEL] NO HANDSHAKE ON PUSH SOCKET.. Cannot SEND data')
       
     ##########################################################################
-    
+    """
+    Function to get output from thread
+    """
     def _get_response_(self):
         return self._thread_data_output
     
     ##########################################################################
-    
+    """
+    Function to set output from thread
+    """
     def _set_response_(self, _resp=None):
         self._thread_data_output = _resp
     
     ##########################################################################
-    
-    def _valid_response_(self, _input='zmq'):
-        
-        # Valid data types
-        _types = (dict,DataFrame)
-        
-        # If _input = 'zmq', assume self._zmq._thread_data_output
-        if isinstance(_input, str) and _input == 'zmq':
-            return isinstance(self._get_response_(), _types)
-        else:
-            return isinstance(_input, _types)
-            
-        # Default
-        return False
-    
-    ##########################################################################
-    
     """
     Function to retrieve data from MetaFarmerX (PULL)
     """
@@ -267,9 +246,10 @@ class MetaFarmerXConnector():
         return None
         
     ##########################################################################
-    
-    # Convenience functions to permit easy trading via underlying functions.
-    
+    """
+    Liquidity Pool Helper Functions
+    """
+
     # OPEN POSITION
     def _MFX_NEW_POSITION_(self, _order=None):
         
@@ -280,60 +260,66 @@ class MetaFarmerXConnector():
         self._MFX_SEND_COMMAND_(**_order)
         
     # CLOSE POSITION
-    def _MFX_CLOSE_POSITION_(self, _ticket):
+    def _MFX_CLOSE_POSITION_(self, _position_id):
         
         try:
             self.temp_order_dict['_action'] = 'CLOSE'
-            self.temp_order_dict['_ticket'] = _ticket
+            self.temp_order_dict['_position_id'] = _position_id
             
             # Execute
             self._MFX_SEND_COMMAND_(**self.temp_order_dict)
             
         except KeyError:
-            print("[ERROR] Order Ticket {} not found!".format(_ticket))
+            print("[ERROR] Position {} not found!".format(_position_id))
             
     # ADD LIQUIDITY
-    def _MFX_ADD_LIQUIDITY_(self, _magic):
+    def _MFX_ADD_LIQUIDITY_(self, _position_id):
         
         try:
             self.temp_order_dict['_action'] = 'ADD_LIQUIDITY'
+            self.temp_order_dict['_position_id'] = _position_id
             
             # Execute
             self._MFX_SEND_COMMAND_(**self.temp_order_dict)
             
         except KeyError:
-            pass
+            print("[ERROR] Position {} not found!".format(_position_id))
     
     # REMOVE LIQUIDITY
-    def _MFX_REMOVE_LIQUIDITY_(self):
+    def _MFX_REMOVE_LIQUIDITY_(self, _position_id):
         
         try:
             self.temp_order_dict['_action'] = 'REMOVE_LIQUIDITY'
+            self.temp_order_dict['_position_id'] = _position_id
             
             # Execute
             self._MFX_SEND_COMMAND_(**self.temp_order_dict)
             
         except KeyError:
-            pass
+            print("[ERROR] Position {} not found!".format(_position_id))
         
     # GET OPEN POSITIONS
-    def _MFX_GET_ALL_OPEN_POSITIONS_(self):
+    def _MFX_GET_ALL_OPEN_POSITIONS_(self, _position_id):
         
         try:
             self.temp_order_dict['_action'] = 'GET_OPEN_POSITIONS'
-                        
+            self.temp_order_dict['_position_id'] = _position_id
+            
             # Execute
             self._MFX_SEND_COMMAND_(**self.temp_order_dict)
             
         except KeyError:
-            pass
+            print("[ERROR] Position {} not found!".format(_position_id))
     
     # DEFAULT ORDER DICT
     def _generate_default_order_dict(self):
-        return({'_action': 'OPEN',CLOSE_ALL############################################
+        return({'_action': 'OPEN', '_position_id': 0,
+                                '_symbol': 'avalanche-2',
+                                '_call_data': []})
+    
+    ##########################################################################
     """
-    Function to construct messages for sending TRACK_PRICES commands to 
-    MetaFarmerX for real-time price updates
+    Request real-time price updates from MetaFarmerX 
     """
     def _MFX_SEND_TRACKPRICES_REQUEST_(self,
                                  _symbols=['avalanche-2']):
@@ -344,27 +330,13 @@ class MetaFarmerXConnector():
         # Send via PUSH Socket
         self.remote_send(self._PUSH_SOCKET, _msg)
     
-    
-    
-    ##########################################################################
-    
-    
     ##########################################################################
     """
     Function to construct messages for sending Farming commands to MetaFarmerX
     """
     def _MFX_SEND_COMMAND_(self, _action='OPEN', _position_id=0,
                                 _symbol='avalanche-2', 
-                                _call_data=[
-                                            50 * 10**6,     # supply USDC.e
-                                            0,              # supply AVAX
-                                            0,              # supply LP
-                                            100 * 10**6,    # borrow USDC.e
-                                            0,              # borrow AVAX
-                                            0,              # borrow LP tokens
-                                            0,              # min USDC
-                                            0               # min AVAX
-                                            ]):
+                                _call_data=[]):
         
         _msg = "{};{};{};{};{}".format('TRADE',_action,_position_id,
                                                 _call_data,_symbol)
@@ -373,19 +345,17 @@ class MetaFarmerXConnector():
         self.remote_send(self._PUSH_SOCKET, _msg)
         
         """
-         compArray[0] = FARM or MARKET_DATA OR POSITION_INFO
-         compArray[1] = ACTION (e.g. OPEN, CLOSE, ADD_LIQUIDITY, REMOVE_LIQUIDITY, HARVEST)
-         compArray[2] = POSITION_ID
-         compArray[3] = Symbol (e.g. AVALANCHE-2, etc.)
-         compArray[4] = CALL_DATA 
+         [0] = FARM | MARKET_DATA | POSITION_INFO
+         [1] = ACTION (e.g. OPEN, CLOSE, ADD_LIQUIDITY, REMOVE_LIQUIDITY, HARVEST)
+         [2] = POSITION_ID
+         [3] = Symbol (e.g. AVALANCHE-2, etc.)
+         [4] = CALL_DATA 
          """
     
     ##########################################################################
-    
     """
     Function to check Poller for new reponses (PULL) and market data (SUB)
     """
-    
     def _MFX_Poll_Data_(self, 
                            string_delimiter=';',
                            poll_timeout=1000):
@@ -489,38 +459,36 @@ class MetaFarmerXConnector():
         print("\n++ [KERNEL] _MFX_Poll_Data_() Signing Out ++")
                 
     ##########################################################################
-    
     """
     Function to subscribe to given Symbol's price feed from MetaFarmerX
     """
-    def _MFX_SUBSCRIBE_MARKETDATA_(self, 
-                                       _symbol='avalanche-2'):
+    def _MFX_SUBSCRIBE_MARKETDATA_(self, _symbol='avalanche-2'):
         
         # Subscribe to SYMBOL first.
         self._SUB_SOCKET.setsockopt_string(zmq.SUBSCRIBE, _symbol)
         
-        print("[KERNEL] Subscribed to {} BID/ASK updates. See self._Market_Data_DB.".format(_symbol))
+        print("[KERNEL] Subscribed to {} Price updates. See self._Market_Data_DB.".format(_symbol))
     
     """
-    Function to unsubscribe to given Symbol's BID/ASK feed from MetaFarmerX
+    Function to unsubscribe to given Symbol's Price feed from MetaFarmerX
     """
     def _MFX_UNSUBSCRIBE_MARKETDATA_(self, _symbol):
         
         self._SUB_SOCKET.setsockopt_string(zmq.UNSUBSCRIBE, _symbol)
         print("\n**\n[KERNEL] Unsubscribing from " + _symbol + "\n**\n")
         
-        
     """
     Function to unsubscribe from ALL MetaFarmerX Symbols
     """
     def _MFX_UNSUBSCRIBE_ALL_MARKETDATA_REQUESTS_(self):
         
-        # 31-07-2019 12:22 CEST
         for _symbol in self._Market_Data_DB.keys():
             self._MFX_UNSUBSCRIBE_MARKETDATA_(_symbol=_symbol)
         
     ##########################################################################
-    
+    """
+    Function to monitor the socket PUSH/PULL socket
+    """
     def _MFX_EVENT_MONITOR_(self, 
                                 socket_name, 
                                 monitor_socket):
@@ -529,14 +497,12 @@ class MetaFarmerXConnector():
             
             sleep(self._sleep_delay) # poll timeout is in ms, sleep() is s.
             
-            # while monitor_socket.poll():
             while monitor_socket.poll(self._poll_timeout):
                 
                 try:
                     evt = recv_monitor_message(monitor_socket, zmq.DONTWAIT)
                     evt.update({'description': self._MONITOR_EVENT_MAP[evt['event']]})
                     
-                    # print(f"\r[{socket_name} Socket] >> {evt['description']}", end='', flush=True)
                     print(f"\n[{socket_name} Socket] >> {evt['description']}")
                     
                     # Set socket status on HANDSHAKE
@@ -549,8 +515,6 @@ class MetaFarmerXConnector():
                         elif socket_name == "PULL":
                             self._PULL_SOCKET_STATUS['state'] = True
                             self._PULL_SOCKET_STATUS['latest_event'] = 'EVENT_HANDSHAKE_SUCCEEDED'
-                            
-                        # print(f"\n[{socket_name} Socket] >> ..ready for action!\n")
                             
                     else:    
                         # Update 'latest_event'
@@ -580,15 +544,11 @@ class MetaFarmerXConnector():
         
         print(f"\n++ [KERNEL] {socket_name} _MFX_EVENT_MONITOR_() Signing Out ++")
             
-    ##########################################################################
-    
-    def _MFX_HEARTBEAT_(self):
-        self.remote_send(self._PUSH_SOCKET, "HEARTBEAT;")
-        
-    ##########################################################################
 
 ##############################################################################
-
+"""
+Function to Deinitialize the connector client safely
+"""
 def _MFX_CLEANUP_(_name='MFX_Connector',
                       _globals=globals(), 
                       _locals=locals()):
@@ -613,4 +573,3 @@ def _MFX_CLEANUP_(_name='MFX_Connector',
             print('\n++ [KERNEL] Cleanup Complete -> OK to initialize MFX_Connector. ++\n')
         else:
             print(_msg)
-            
