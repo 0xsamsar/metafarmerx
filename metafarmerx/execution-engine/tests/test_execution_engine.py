@@ -42,7 +42,7 @@ def test_harvest_rewards():
 
 #TODO: Create test cases for all contract transactions
 def main():
-    pass
+    test_open_position()
 
 
 if __name__ == "main":

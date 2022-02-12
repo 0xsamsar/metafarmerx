@@ -10,7 +10,6 @@ from time import sleep
 from pandas import DataFrame, Timestamp
 from threading import Thread
 
-from zmq.utils.monitor import recv_monitor_message
 
 class MetaFarmerXConnector():
 
@@ -125,44 +124,6 @@ class MetaFarmerXConnector():
                                                self._poll_timeout,))
         self._MarketData_Thread.daemon = True
         self._MarketData_Thread.start()
-        
-        ###########################################
-        # Enable/Disable ZeroMQ Socket Monitoring #
-        ###########################################
-        if _monitor == True:
-            
-            # ZeroMQ Monitor Event Map
-            self._MONITOR_EVENT_MAP = {}
-            
-            print("\n[KERNEL] Retrieving ZeroMQ Monitor Event Names:\n")
-            
-            for name in dir(zmq):
-                if name.startswith('EVENT_'):
-                    value = getattr(zmq, name)
-                    print(f"{value}\t\t:\t{name}")
-                    self._MONITOR_EVENT_MAP[value] = name
-            
-            print("\n[KERNEL] Socket Monitoring Config -> DONE!\n")
-        
-            # Disable PUSH/PULL sockets and let MONITOR events control them.
-            self._PUSH_SOCKET_STATUS['state'] = False
-            self._PULL_SOCKET_STATUS['state'] = False
-            
-            # PUSH
-            self._PUSH_Monitor_Thread = Thread(target=self._MFX_EVENT_MONITOR_, 
-                                               args=("PUSH",
-                                                     self._PUSH_SOCKET.get_monitor_socket(),))
-            
-            self._PUSH_Monitor_Thread.daemon = True
-            self._PUSH_Monitor_Thread.start()
-            
-            # PULL
-            self._PULL_Monitor_Thread = Thread(target=self._MFX_EVENT_MONITOR_, 
-                                               args=("PULL",
-                                                     self._PULL_SOCKET.get_monitor_socket(),))
-            
-            self._PULL_Monitor_Thread.daemon = True
-            self._PULL_Monitor_Thread.start()
        
     ##########################################################################
     def _MFX_SHUTDOWN_(self):
@@ -484,65 +445,6 @@ class MetaFarmerXConnector():
         
         for _symbol in self._Market_Data_DB.keys():
             self._MFX_UNSUBSCRIBE_MARKETDATA_(_symbol=_symbol)
-        
-    ##########################################################################
-    """
-    Function to monitor the socket PUSH/PULL socket
-    """
-    def _MFX_EVENT_MONITOR_(self, 
-                                socket_name, 
-                                monitor_socket):
-        
-        while self._ACTIVE:
-            
-            sleep(self._sleep_delay) # poll timeout is in ms, sleep() is s.
-            
-            while monitor_socket.poll(self._poll_timeout):
-                
-                try:
-                    evt = recv_monitor_message(monitor_socket, zmq.DONTWAIT)
-                    evt.update({'description': self._MONITOR_EVENT_MAP[evt['event']]})
-                    
-                    print(f"\n[{socket_name} Socket] >> {evt['description']}")
-                    
-                    # Set socket status on HANDSHAKE
-                    if evt['event'] == 4096:        # EVENT_HANDSHAKE_SUCCEEDED
-                        
-                        if socket_name == "PUSH":
-                            self._PUSH_SOCKET_STATUS['state'] = True
-                            self._PUSH_SOCKET_STATUS['latest_event'] = 'EVENT_HANDSHAKE_SUCCEEDED'
-                            
-                        elif socket_name == "PULL":
-                            self._PULL_SOCKET_STATUS['state'] = True
-                            self._PULL_SOCKET_STATUS['latest_event'] = 'EVENT_HANDSHAKE_SUCCEEDED'
-                            
-                    else:    
-                        # Update 'latest_event'
-                        if socket_name == "PUSH":
-                            self._PUSH_SOCKET_STATUS['state'] = False
-                            self._PUSH_SOCKET_STATUS['latest_event'] = evt['description']
-                            
-                        elif socket_name == "PULL":
-                            self._PULL_SOCKET_STATUS['state'] = False
-                            self._PULL_SOCKET_STATUS['latest_event'] = evt['description']
-                
-                    if evt['event'] == zmq.EVENT_MONITOR_STOPPED:
-                        
-                        # Reinitialize the socket
-                        if socket_name == "PUSH":
-                            monitor_socket = self._PUSH_SOCKET.get_monitor_socket()
-                        elif socket_name == "PULL":
-                            monitor_socket = self._PULL_SOCKET.get_monitor_socket()
-                        
-                except Exception as ex:
-                    _exstr = "Exception Type {0}. Args:\n{1!r}"
-                    _msg = _exstr.format(type(ex).__name__, ex.args)
-                    print(_msg)
-               
-        # Close Monitor Socket
-        monitor_socket.close()
-        
-        print(f"\n++ [KERNEL] {socket_name} _MFX_EVENT_MONITOR_() Signing Out ++")
             
 
 ##############################################################################
@@ -573,3 +475,11 @@ def _MFX_CLEANUP_(_name='MFX_Connector',
             print('\n++ [KERNEL] Cleanup Complete -> OK to initialize MFX_Connector. ++\n')
         else:
             print(_msg)
+
+
+def main():
+    pass
+
+
+if __name__ == "__main__":
+    main()

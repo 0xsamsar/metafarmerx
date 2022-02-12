@@ -10,7 +10,7 @@ from time import sleep
 from pandas import DataFrame, Timestamp
 from threading import Thread
 
-from zmq.utils.monitor import recv_monitor_message
+from adapters.api_adapter import CoinGeckoAdapter, HomoraAdapter, CreamAdapter
 
 class MetaFarmerXServer():
 
@@ -18,8 +18,7 @@ class MetaFarmerXServer():
     MetaFarmerX Server
     """
     def __init__(self, 
-        _ServerID='mfx-server',    # Unique ID for this client
-        _host='localhost',         # Host to connect to
+        _host='127.0.0.1',         # Host to connect to
         _protocol='tcp',           # Connection protocol
         _PUSH_PORT=32768,          # Port for Receiving commands
         _PULL_PORT=32769,          # Port for Sending responses
@@ -48,9 +47,10 @@ class MetaFarmerXServer():
         self._MILLISECOND_TIMER = 1
         self._MILLISECOND_TIMER_PRICES = 500
         self._MAIN_STRING_DELIMITER = ":|:"
+        self._sleep_delay = 1
 
         # Market Data Client Configuration
-        self._PUBLISH_MARKET_DATA = False
+        self._PUBLISH_MARKET_DATA = True
         self._PUBLISH_SYMBOLS = []
         
         # Create Sockets
@@ -71,31 +71,42 @@ class MetaFarmerXServer():
         self._poller.register(self._PULL_SOCKET, zmq.POLLIN)
         
         # Bind PUSH Socket to receive commands from MetaFarmerXConnector
-        self._PUSH_SOCKET.connect(self._URL + str(self._PUSH_PORT))
+        self._PUSH_SOCKET.bind(self._URL + str(self._PUSH_PORT))
         print("[INIT] Ready to send commands to MetaFarmerX (PUSH): " + str(self._PUSH_PORT))
         
         # Connect PULL Socket to send responses to MetaFarmerXConnector
-        self._PULL_SOCKET.connect(self._URL + str(self._PULL_PORT))
+        self._PULL_SOCKET.bind(self._URL + str(self._PULL_PORT))
         print("[INIT] Listening for responses from MetaFarmerX (PULL): " + str(self._PULL_PORT))
         
         # Connect PUB Socket to send market data to MetaFarmerXConnector
         print("[INIT] Listening for market data from MetaFarmerX (SUB): " + str(self._PUB_PORT))
-        self._SUB_SOCKET.connect(self._URL + str(self._PUB_PORT))
-        
+        self._PUB_SOCKET.bind(self._URL + str(self._PUB_PORT))
+
+        # Instantiate APIs
+        self.price = CoinGeckoAdapter()
+        self.farming_apy = HomoraAdapter()
+        self.borrowing_apy = CreamAdapter()
+
+        # Run server
+        self._RUN = True
+        # self._Server_Thread = Thread(target=self.RunServer, 
+        #                                  args=(';',1000,))
+        # self._Server_Thread.daemon = True
+        # self._Server_Thread.start()
+        self.RunServer()
+
+
     ##########################################################################    
     """
     Function to send data to Connector Client (PUSH)
     """
     def remote_send(self, _socket, _data):
         
-        if self._PUSH_SOCKET_STATUS['state'] == True:
-            try:
-                _socket.send_string(_data, zmq.DONTWAIT)
-            except zmq.error.Again:
-                print("\nResource timeout.. please try again.")
-                sleep(self._sleep_delay)
-        else:
-            print('\n[KERNEL] NO HANDSHAKE ON PUSH SOCKET.. Cannot SEND data')
+        try:
+            _socket.send_string(_data, zmq.DONTWAIT)
+        except zmq.error.Again:
+            print("\nResource timeout.. please try again.")
+            sleep(self._sleep_delay)
       
     ##########################################################################
     """
@@ -103,16 +114,13 @@ class MetaFarmerXServer():
     """
     def remote_recv(self, _socket):
         
-        if self._PULL_SOCKET_STATUS['state'] == True:
-            try:
-                msg = _socket.recv_string(zmq.DONTWAIT)
-                return msg
-            except zmq.error.Again:
-                print("\nResource timeout.. please try again.")
-                sleep(self._sleep_delay)
-        else:
-            print('\r[KERNEL] NO HANDSHAKE ON PULL SOCKET.. Cannot READ data', end='', flush=True)
-            
+        try:
+            msg = _socket.recv_string(zmq.DONTWAIT)
+            return msg
+        except zmq.error.Again:
+            print("\nResource timeout.. please try again.")
+            sleep(self._sleep_delay)
+        
         return None
         
     ##########################################################################
@@ -122,28 +130,22 @@ class MetaFarmerXServer():
     def OnTick(self):
         if self._PUBLISH_MARKET_DATA == True:
             
-            #get data
+            # get data
+            self.price.call()
+            self.farming_apy.call()
+            self.borrowing_apy.call()
 
-            #send data
+            msg = "{}: {};".format('Avalanche-2', self.borrowing_apy.call())
 
-            pass
-
-   ##########################################################################
-    """
-    Function to send market data to subscribed client
-    """
-    def OnTimer(self):
-        self.MessageHandler
-
-        #send response
-
-        onTick
+            print("Sending: ", msg)
+            # send data
+            self.remote_send(self._PUB_SOCKET, msg)
 
    ##########################################################################
     """
     Function to send market data to subscribed client
     """
-    def MessageHandler(self):
+    def MessageHandler(self, msg):
         
         #Get data from request   
 
@@ -153,14 +155,14 @@ class MetaFarmerXServer():
 
     ##########################################################################
     """
-    Function to send market data to subscribed client
+    Function to interpret data
     """
     def MessageInterpreter(self):
         pass
 
     ##########################################################################
     """
-    Function to send market data to subscribed client
+    Function to parse data
     """
     def MessageParser(self):
         pass
@@ -169,66 +171,37 @@ class MetaFarmerXServer():
     """
     Function to check Poller for new reponses (PULL) and market data (SUB)
     """
-    def _MFX_Poll_Data_(self, 
-                           string_delimiter=';',
-                           poll_timeout=1000):
+    def RunServer(self, string_delimiter=';', poll_timeout=1):
         
-        while self._ACTIVE:
+        while self._RUN:
             
-            sleep(self._sleep_delay) # poll timeout is in ms, sleep() is s.
+            sleep(self._sleep_delay) # sleep() is s.
             
             sockets = dict(self._poller.poll(poll_timeout))
             
             # Process response to commands sent to MetaFarmerX
             if self._PULL_SOCKET in sockets and sockets[self._PULL_SOCKET] == zmq.POLLIN:
                 
-                if self._PULL_SOCKET_STATUS['state'] == True:
-                    try:
-                        
-                        # msg = self._PULL_SOCKET.recv_string(zmq.DONTWAIT)
-                        msg = self.remote_recv(self._PULL_SOCKET)
-                        
-                        # If data is returned, store as pandas Series
-                        if msg != '' and msg != None:
-                            
-                            try: 
-                                _data = eval(msg)
-                                if '_action' in _data and _data['_action'] == 'HIST':
-                                    _symbol = _data['_symbol']
-                                    if '_data' in _data.keys():
-                                        if _symbol not in self._History_DB.keys():
-                                            self._History_DB[_symbol] = {}
-                                        self._History_DB[_symbol] = _data['_data']
-                                    else:
-                                        print('No data found.')
-                                        print('message: ' + msg)
+                try:
+                    msg = self.remote_recv(self._PULL_SOCKET)
+                    if msg != '' and msg != None:
+                        try: 
+                            _data = eval(msg)
+                            self.MessageHandler(_data)
                                 
-                                # invokes data handlers on pull port
-                                for hnd in self._pulldata_handlers:
-                                    hnd.onPullData(_data)
-                                
-                                self._thread_data_output = _data
-                                if self._verbose:
-                                    print(_data) # default logic
-                                    
-                            except Exception as ex:
-                                _exstr = "Exception Type {0}. Args:\n{1!r}"
-                                _msg = _exstr.format(type(ex).__name__, ex.args)
-                                print(_msg)
-                   
-                    except zmq.error.Again:
-                        pass # resource temporarily unavailable, nothing to print
-                    except ValueError:
-                        pass # No data returned, passing iteration.
-                    except UnboundLocalError:
-                        pass # _symbol may sometimes get referenced before being assigned.
+                        except Exception as ex:
+                            _exstr = "Exception Type {0}. Args:\n{1!r}"
+                            _msg = _exstr.format(type(ex).__name__, ex.args)
+                            print(_msg)
                 
-                else:
-                    print('\r[KERNEL] NO HANDSHAKE on PULL SOCKET.. Cannot READ data.', end='', flush=True)
+                except zmq.error.Again:
+                    pass # resource temporarily unavailable, nothing to print
+                except ValueError:
+                    pass # No data returned, passing iteration.
+                except UnboundLocalError:
+                    pass # _symbol may sometimes get referenced before being assigned.
                 
-        print("\n++ [KERNEL] _MFX_Poll_Data_() Signing Out ++")
-
-
+            self.OnTick()
 
     ##########################################################################
     """
@@ -236,3 +209,24 @@ class MetaFarmerXServer():
     """
     def MFX_Add_Liquidity(self):
         pass
+
+    ##########################################################################
+    """
+    APIs to interact 
+    """
+    def MFX_Remove_Liquidity(self):
+        pass
+
+    ##########################################################################
+    """
+    APIs to interact 
+    """
+    def MFX_Harvest_Rewards(self):
+        pass
+
+
+def main():
+    server = MetaFarmerXServer()
+
+if __name__ == "__main__":
+    main()

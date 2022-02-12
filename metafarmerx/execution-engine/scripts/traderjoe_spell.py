@@ -1,6 +1,6 @@
 import json
 from web3 import Web3
-from brownie import accounts, config, Contract
+from brownie import accounts, config, interface, Contract
 from .utils import load_abi, get_account
 
 
@@ -50,3 +50,20 @@ def harvest_rewards(pos_id):
         {'from': account}
     )
     return tx
+
+def main():
+    pos_id = 0
+    call_data = [
+                    50 * 10**6,     # supply USDC.e
+                    0,              # supply AVAX
+                    0,              # supply LP
+                    100 * 10**6,    # borrow USDC.e
+                    0,              # borrow AVAX
+                    0,              # borrow LP tokens
+                    0,              # min USDC
+                    0               # min AVAX
+                ]
+    add_liquidity(pos_id, call_data)
+
+if __name__ == "main":
+    main()
