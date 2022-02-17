@@ -1,10 +1,10 @@
 project_structure:
-    build: metafarmerx/execution-engine/build
-    contracts: metafarmerx/execution-engine/contracts
-    interfaces: metafarmerx/execution-engine/interfaces
-    reports: metafarmerx/execution-engine/reports
-    scripts: metafarmerx/execution-engine/scripts
-    tests: metafarmerx/execution-engine/tests
+    build: build
+    contracts: contracts
+    interfaces: interfaces
+    reports: reports
+    scripts: scripts
+    tests: tests
 
 networks:
   default: avax-main

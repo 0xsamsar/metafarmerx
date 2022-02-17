@@ -63,7 +63,8 @@ def main():
                     0,              # min USDC
                     0               # min AVAX
                 ]
-    add_liquidity(pos_id, call_data)
+    tx = add_liquidity(pos_id, call_data)
+    print(tx)
 
 if __name__ == "main":
     main()
