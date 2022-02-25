@@ -16,9 +16,9 @@ def query_pool(pos_id):
     token0_supply = r0 * collSize // supply / 10**interface.IAny(token0).decimals()
     token1_supply = r1 * collSize // supply / 10**interface.IAny(token1).decimals()
 
-    print(f'{interface.IAny(token0).symbol()} amount:', token0_supply)
-    print(f'{interface.IAny(token1).symbol()} amount:', token1_supply)
-    
+    print(f'{interface.IAny(token0).symbol()} Supply:', token0_supply)
+    print(f'{interface.IAny(token1).symbol()} Supply:', token1_supply)
+    print(collSize)
     return token0_supply, token1_supply
 
     
@@ -31,3 +31,12 @@ def query_bank(pos_id):
     print(f'borrow value: {borrow_value}')
 
     return collateral_value, borrow_value
+
+
+def main():
+    pos_id = 8000 # random pos 
+    query_pool(pos_id)
+    query_bank(pos_id) 
+
+if __name__ == "__main__":
+    main()

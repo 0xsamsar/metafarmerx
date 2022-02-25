@@ -53,8 +53,8 @@ def harvest_rewards(pos_id):
 
 def main():
     pos_id = 0
-    call_data = [
-                    50 * 10**6,     # supply USDC.e
+    # borrow $50 usdc on 3x leverage
+    call_data = [   50 * 10**6,     # supply USDC.e
                     0,              # supply AVAX
                     0,              # supply LP
                     100 * 10**6,    # borrow USDC.e
@@ -63,8 +63,11 @@ def main():
                     0,              # min USDC
                     0               # min AVAX
                 ]
+    
     tx = add_liquidity(pos_id, call_data)
     print(tx)
+    pass
 
 if __name__ == "main":
     main()
+

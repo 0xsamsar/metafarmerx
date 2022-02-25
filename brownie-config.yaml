@@ -8,6 +8,7 @@ project_structure:
 
 networks:
   default: avax-main
+  gas_limit: max
   avax-main:
     host: ${AVAX_RPC_URL}
 
