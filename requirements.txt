@@ -2,3 +2,5 @@ web3
 eth-brownie
 dotenv
 pyaml_env
+requests
+pick

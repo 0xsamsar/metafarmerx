@@ -1,23 +1,20 @@
-import os
-from turtle import st
-from pandas import Timedelta, to_datetime
-from threading import Thread, Lock
+from threading import Lock, Thread
 from time import sleep
+
+from pandas import Timedelta, to_datetime
 
 
 class AutoHedger(object):
     """
     Implements the delta-neutral hedge rebalancing logic
     """
-    def __init__(self, strategy):
-        # Instantiate Strategy 
-        self._strategy = strategy
-
+    def __init__(self, _strategy):
         # Strategy Parameters
+        self._strategy = _strategy
         self._threshold = 0.04
 
         # Initial Parameters
-        self._prev_token_price = 100.0
+        self._prev_token_price = None
 
         # Store history of all rebalncing actions
         self._rebalancing_history = {} 
@@ -34,9 +31,12 @@ class AutoHedger(object):
         """
         Checks the health of the system
         """
-        cur_token_price = self._strategy._price_data[
-                                        self._strategy._risky_token]['usd']
-        print(cur_token_price)
+        cur_token_price = self._strategy.get_price()
+
+        # initialize price 
+        if self._prev_token_price == None:
+            self._prev_token_price = cur_token_price
+
         healthy = self.healthy(self._prev_token_price, 
                                         cur_token_price, 
                                         self._threshold)
@@ -50,7 +50,7 @@ class AutoHedger(object):
         Initiates rebalancing 
         """
 
-        #TODO
+        #TODO: Finish Impl. by Thur. meeting
         pass
 
     ##########################################################################    

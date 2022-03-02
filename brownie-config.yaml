@@ -8,10 +8,11 @@ project_structure:
 
 networks:
   default: avax-main
-  gas_limit: max
   avax-main:
     host: ${AVAX_RPC_URL}
-
+    max_fee: 250 gwei
+    priority_fee: 5 gwei
+    
 alpha-homora:
   HomoraBank: "0x376d16C7dE138B01455a51dA79AD65806E9cd694"
   HomoraBankABI: "HomoraBankABI.json"    
@@ -24,8 +25,10 @@ alpha-homora:
     USDC.e/AVAX:
       token0: "0xa7d7079b0fead91f3e65f86e8915cb59c1a4c664"
       token1: "0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7"
-      tokenLP: "0xa389f9430876455c36478deea9769b7ca4e3ddb1" 
+      tokenLP: "0xa389f9430876455c36478deea9769b7ca4e3ddb1"
+      riskyTokenCGID: "avalanche-2" 
       spell: "0xdbc2aa11aa01baa22892de745c661db9f204b2cd"
+      spellName: "TraderJoeSpellV1"
       spellAbi: "TraderJoeSpellV1ABI.json"
       staking: "0xd6a4f121ca35509af06a0be99093d08462f53052"
       wToken: "0xb41de9c1f50697cc3fd63f24ede2b40f6269cbcb"

@@ -1,28 +1,20 @@
-'''
-        __  ___     __        ______                              _  __
-       /  |/  /__  / /_____ _/ ____/___ __________ ___  ___  ____| |/ /
-      / /|_/ / _ \/ __/ __ `/ /_  / __ `/ ___/ __ `__ \/ _ \/ ___/   / 
-     / /  / /  __/ /_/ /_/ / __/ / /_/ / /  / / / / / /  __/ /  /   |  
-    /_/  /_/\___/\__/\__,_/_/    \__,_/_/  /_/ /_/ /_/\___/_/  /_/|_|  
-
-'''
-
 import sys
 import zmq
 from time import sleep
 
 from pandas import DataFrame, Timestamp
 
-# sys.path.append("your directory/MetaFarmerX/metafarmerx")
-
 
 class MFXSubscriber(object):
     """
     Subscribes stratgies to real-time market data from MetaFarmerX
     """
-    def __init__(self, _host='localhost', _protocol='tcp', 
-                    _sub_port=42069, _subdata_handlers=[], 
-                    _multiprocess=True):
+    def __init__(self,
+                _host='localhost',
+                _protocol='tcp', 
+                _sub_port=42069,
+                _subdata_handlers=[], 
+                _multiprocess=True):
         # Strategy Status 
         self._ACTIVE = True
         
@@ -66,7 +58,7 @@ class MFXSubscriber(object):
         # Connect SUB Socket to MetaFarmerX
         self._sub_socket.connect(self._url + str(self._sub_port))
         self._sub_socket.setsockopt_string(zmq.SUBSCRIBE, '')
-        print("[CONNECTED] Listening for market data from MetaFarmerX [SUB]: " + str(self._sub_port))
+        print("[SUCCESS] Listening for market data [SUB]: " + str(self._sub_port))
     
     ##########################################################################
     def shutdown(self):

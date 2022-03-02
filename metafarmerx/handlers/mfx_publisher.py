@@ -1,28 +1,20 @@
-'''
-        __  ___     __        ______                              _  __
-       /  |/  /__  / /_____ _/ ____/___ __________ ___  ___  ____| |/ /
-      / /|_/ / _ \/ __/ __ `/ /_  / __ `/ ___/ __ `__ \/ _ \/ ___/   / 
-     / /  / /  __/ /_/ /_/ / __/ / /_/ / /  / / / / / /  __/ /  /   |  
-    /_/  /_/\___/\__/\__,_/_/    \__,_/_/  /_/ /_/ /_/\___/_/  /_/|_|  
-
-'''
-
 import sys
 import zmq
 import json
 
 from time import sleep
 
-# sys.path.append("your directory/MetaFarmerX/metafarmerx")
-
-from adapters.market_data import MarketData
-
 
 class MFXPublisher(object):
     """
     Publishes real-time market data to client strategies  
     """
-    def __init__(self, _host='127.0.0.1', _protocol='tcp', _pub_port=42069, _multiprocess=True):   
+    def __init__(self,
+                _host='127.0.0.1',       
+                _protocol='tcp', 
+                _pub_port=42069,
+                _sleep_delay=1,
+                _multiprocess=True):   
         # ZeroMQ Host
         self._host = _host
         
@@ -39,13 +31,10 @@ class MFXPublisher(object):
         
         if self._multiprocess == False:
             self.create_context()
+            print("[SUCCESS] MetaFarmerX Market Feeds Live")
 
         # set the frequency of data updates (s)
-        self._sleep_delay = 1 
-
-        # Instantiate Market Data Object
-        self._market_data = MarketData()
-        print("[INITIALIZED] MetaFarmerX Market Feeds")
+        self._sleep_delay = _sleep_delay 
 
         # Market Data Client Configuration
         self._PUBLISH_MARKET_DATA = True
@@ -69,7 +58,13 @@ class MFXPublisher(object):
         # Connect PUB Socket to send market data
         self._pub_socket.bind(self._url + str(self._pub_port)) 
 
-
+    ##########################################################################    
+    def set_delay(self, _frequency):
+        """
+        Set new frequency of market updates
+        """
+        self._sleep_delay = _frequency
+      
     ##########################################################################    
     def remote_send(self, _socket, _data):
         """
@@ -86,8 +81,8 @@ class MFXPublisher(object):
         """
         Retreive market data
         """
-        self._market_data.fetch_data()
-        self._market_data.transform_data()
+        self.fetch_data()
+        self.transform_data()
       
     ##########################################################################
     def on_tick(self):
@@ -99,7 +94,7 @@ class MFXPublisher(object):
             self.update_data()
 
             # send data to client through PUB socket
-            self.remote_send(self._pub_socket, self._market_data._tranformed_data)
+            self.remote_send(self._pub_socket, self.tranformed_data)
 
     ##########################################################################
     def run(self):
@@ -108,6 +103,7 @@ class MFXPublisher(object):
         """
         if self._multiprocess:
             self.create_context()
+            print("[SUCCESS] MetaFarmerX Market Feeds Live")
 
         while self._RUN:
             # blocking delay

@@ -1,7 +1,9 @@
 import json
 
 from pycoingecko import CoinGeckoAPI
+
 from .http_client import HTTPClient
+
 
 class CoinGeckoAdapter(HTTPClient):
     """
