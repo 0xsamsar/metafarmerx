@@ -2,7 +2,7 @@
 Robust Yield Farming Engine
 
 ## Introduction
-MetaFarmerX is a distributed yield-farming system (inspired by MetaTrader) that can be used to to simplify building and deploying automated yield farming strategies. This system can be used for acquiring market data (on-chain & off-chain), trade execution, and strategy & portfolio managemnt.
+MetaFarmerX is a distributed yield-farming system that can be used to to simplify building and deploying automated yield farming strategies. This system can be used for acquiring market data (on-chain & off-chain), trade execution, and strategy & portfolio managemnt.
 
 ## Libraries
 - Brownie
