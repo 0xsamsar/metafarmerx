@@ -1,28 +1,17 @@
 # MetaFarmerX
-Robust Yield Farming Engine
+**NOTE:** Further Development of MetaFarmerX will be taken offline as delta neutral farming stratgies will be developed. You can reach me on Twitter for further inquiry: [@0xSamsar](https://twitter.com/0xSamsar)
 
 ## Introduction
-MetaFarmerX is a distributed yield-farming system that can be used to to simplify building and deploying automated yield farming strategies. This system can be used for acquiring market data (on-chain & off-chain), trade execution, and strategy & portfolio managemnt.
+MetaFarmerX is a distributed yield-farming framework that can be used to to simplify building and deploying automated yield farming strategies. This system can be used for data aggregation (on-chain & off-chain), trade execution, and strategy & portfolio management. The purpose of this repo is to provide a template - further implementation is needed to create a robust system.
 
-## Libraries
-- Brownie
-- ZeroMQ
-- Web3
+## Setup
+- Install python libraries
+- Set & source environment variables
+- Implement ```AutoHedger``` class
+- Adapt MarketFeed to publish data formatted for your needs
+- Token Approvals ```brownie run scripts/config_manager.py```
+- Run Trading Bot ```brownie run scripts/delta_neutral_bot.py```
 
-## Design Pillars
-- Scalability
-- Reliability
-- Availability
-- Modularity
-
-## Strategy 1: Delta Neutral Farming
-To describe the strategy, let’s use the USDC.e/AVAX farm on Alpha-Homora V2 (avalanche) as an example. Assume we have $10,000 USDC which we plan to yield farm with. Since Alpha Homora allows for loans on both sides of an LP pair, we can create our delta neutral position by just supplying USDC and borrowing against it.
-
-### AVAX Long Exposure 
-We deposit $2,500 USDC and borrow $5,000 USDC to achieve 3x leverage. The platform automatically balances the position to 50-50 since equal amounts need to be added to the pool. Our AVAX long exposure is $7,500 - $3,750 = $3,750.
-### AVAX Short Exposure 
-We deposit $7,500 USDC and borrow $15,000 equivalent of AVAX to achieve 3x leverage. The platform automatically balances the position to 50-50 since equal amounts need to be added to the pool.  Our AVAX short exposure is $15,000 - $11,250 = $3,750.
-
-In essence, when one position is out of the money (OTM), the other will be in the money (ITM). Therefore, we can rebalance the positions by moving the collateral from the ITM position and add to the OTM position.
-
+## Integarations
+\- [x] Alpha Homora V2 (AVAX)
 

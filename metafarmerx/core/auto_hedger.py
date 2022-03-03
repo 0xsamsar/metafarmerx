@@ -49,8 +49,6 @@ class AutoHedger(object):
         """
         Initiates rebalancing 
         """
-
-        #TODO: Finish Impl. by Thur. meeting
         pass
 
     ##########################################################################    
