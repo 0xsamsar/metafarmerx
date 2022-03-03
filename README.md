@@ -13,5 +13,5 @@ MetaFarmerX is a distributed yield-farming framework that can be used to to simp
 - Run Trading Bot ```brownie run scripts/delta_neutral_bot.py```
 
 ## Integarations
-\- [x] Alpha Homora V2 (AVAX)
+[x] Alpha Homora V2 (AVAX)
 
